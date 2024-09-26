@@ -1,77 +1,26 @@
-const WebSocket = require('ws');
-const http = require('http');
-const cors = require('cors');
 const express = require('express');
 const Gun = require('gun');
-const path = require('path');
-
-// Create an Express application
 const app = express();
+const port = process.env.PORT || 3000;
 
-// Apply CORS middleware
-const corsOptions = {
-    origin: '*', // Allow all origins
-    methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-};
-app.use(cors(corsOptions)); // Use CORS middleware
+// Serve static files (if needed for front-end)
+app.use(express.static('public'));
 
-// Serve the server.html file
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'server.html')); // Adjust the path if needed
+// Initialize a Gun instance with Express
+const server = app.listen(port, () => {
+  console.log(`Server running on http://localhost:${port}`);
 });
 
-// Create an HTTP server with Express
-const httpServer = http.createServer(app);
+// Attach Gun to the Express server
+const gun = Gun({ web: server });
 
-// Gun.js setup with WebSocket support
-const gun = Gun({
-    web: httpServer, // Use the HTTP server instance
+// This will print whenever a new peer connects to the Gun relay
+gun.on('hi', peer => {
+  console.log('A new peer joined:', peer);
 });
 
-// Start the HTTP/WebSocket server on the Render provided port or fallback to 3010
-const port = process.env.PORT || 3010;
-httpServer.listen(port, () => {
-    console.log(`HTTP/WebSocket server listening on port ${port}`);
+// This will print when a peer disconnects
+gun.on('bye', peer => {
+  console.log('A peer left:', peer);
 });
 
-// WebSocket server that uses the HTTP server for connections
-const wss = new WebSocket.Server({ server: httpServer });
-
-wss.on('connection', (ws) => {
-    console.log('New WebSocket client connected');
-
-    gun.get('messages').on((data) => {
-        if (ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify(data));
-        }
-    });
-
-    ws.on('message', (message) => {
-        console.log(`Received WebSocket message: ${message}`);
-        wss.clients.forEach((client) => {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(message);
-            }
-        });
-    });
-
-    ws.on('close', () => {
-        console.log('WebSocket client disconnected');
-    });
-
-    ws.on('error', (error) => {
-        console.error(`WebSocket error: ${error.message}`);
-    });
-});
-
-// Optional: Gun.js peer server
-const gunPeerPort = 8765;
-const gunServer = http.createServer((req, res) => {
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('Gun.js Peer Server is running\n');
-});
-
-gunServer.listen(gunPeerPort, () => {
-    console.log(`Gun.js peer server listening on port ${gunPeerPort}`);
-});
