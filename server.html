@@ -16,6 +16,18 @@
         #stats {
             margin-top: 20px;
         }
+        #deleteButton {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #ff4d4d;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #deleteButton:hover {
+            background-color: #ff1a1a;
+        }
     </style>
 </head>
 <body>
@@ -24,6 +36,8 @@
         <p>Total Messages: <span id="totalMessages">0</span></p>
         <p>Size of Messages: <span id="sizeMessages">0</span> bytes</p>
     </div>
+    
+    <button id="deleteButton">Delete All Messages</button>
 
     <script>
         const gun = Gun('https://gun-relay-server-zk8u.onrender.com/gun'); // Change to your Gun.js server URL
@@ -48,6 +62,19 @@
                 }
             });
         }
+
+        // Function to delete all messages
+        function deleteAllMessages() {
+            const guestBookNode = gun.get('GuestBook');
+            guestBookNode.put(null); // Deletes all messages under the 'GuestBook' node
+            alert('All messages have been deleted!');
+            // Reset statistics
+            document.getElementById('totalMessages').innerText = '0';
+            document.getElementById('sizeMessages').innerText = '0';
+        }
+
+        // Event listener for the delete button
+        document.getElementById('deleteButton').addEventListener('click', deleteAllMessages);
 
         // Fetch messages stats on load
         fetchMessagesStats();
