@@ -2,17 +2,21 @@ const Gun = require('gun');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const WebSocket = require('ws');
 
 const port = process.env.PORT || 8765;
 
 // Create an HTTP server
 const server = http.createServer((req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*'); // CORS headers
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
     if (req.url === '/') {
         // Serve the HTML page
         fs.readFile(path.join(__dirname, 'server.html'), 'utf8', (err, data) => {
             if (err) {
-                res.writeHead(500);
+                console.error('Error loading index.html:', err);
+                res.writeHead(500, { 'Content-Type': 'text/plain' });
                 res.end('Error loading index.html');
                 return;
             }
@@ -21,8 +25,8 @@ const server = http.createServer((req, res) => {
         });
     } else {
         // Handle other requests
-        res.writeHead(404);
-        res.end();
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end('404 Not Found');
     }
 });
 
@@ -38,40 +42,28 @@ const gun = Gun({
     radisk: true // Use radisk for in-memory storage
 });
 
-// Create a WebSocket server
-const wss = new WebSocket.Server({ server });
-
-// Handle WebSocket connections
-wss.on('connection', (ws) => {
-    console.log('New WebSocket connection');
-
-    ws.on('message', (message) => {
-        console.log(`Received: ${message}`);
-        // Optionally handle incoming messages from clients
-    });
-
-    ws.on('close', () => {
-        console.log('WebSocket connection closed');
-    });
-
-    ws.on('error', (error) => {
-        console.error('WebSocket error:', error);
-    });
-});
-
 // Create a 'GuestBook' node in the Gun graph
 const guestBook = gun.get('GuestBook');
 
 // Listen for new messages and broadcast them
 guestBook.map().on((message, id) => {
-    console.log(`New message: ${JSON.stringify(message)}`);
+    if (message) {
+        console.log(`New message: ${JSON.stringify(message)}`);
+    } else {
+        console.warn(`Received undefined message for ID: ${id}`);
+    }
 });
 
 // Function to delete messages after 7 days
 const deleteMessagesAfterDelay = (delay) => {
     setTimeout(() => {
-        guestBook.put(null); // Deletes all messages under the 'GuestBook' node
-        console.log('All messages deleted after 7 days.');
+        guestBook.put(null) // Deletes all messages under the 'GuestBook' node
+            .then(() => {
+                console.log('All messages deleted after 7 days.');
+            })
+            .catch(err => {
+                console.error('Error deleting messages:', err);
+            });
     }, delay);
 };
 
