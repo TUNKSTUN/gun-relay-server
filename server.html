@@ -3,94 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gun.js World Chat</title>
-    <script>
-        // Establish a WebSocket connection to the server
-        const ws = new WebSocket('wss://gun-relay-server-zk8u.onrender.com'); // Update with your deployed URL
-
-        ws.onopen = () => {
-            console.log('WebSocket connection established');    
-            logConnectionStatus('WebSocket connection established');
-        };
-
-        ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            console.log('Message from server:', data);
-            // Display the received message in the chat box
-            displayMessage(data);
-        };
-
-        ws.onerror = (error) => {
-            console.error('WebSocket error:', error);
-            logConnectionStatus(`WebSocket error: ${error.message}`);
-        };
-
-        ws.onclose = () => {
-            console.log('WebSocket connection closed');
-            logConnectionStatus('WebSocket connection closed');
-        };
-
-        // Function to send messages to the server
-        function sendMessage() {
-            const messageInput = document.getElementById('messageInput');
-            const message = messageInput.value;
-            if (message) {
-                ws.send(message);
-                messageInput.value = ''; // Clear input after sending
-            }
-        }
-
-        // Function to display messages in the chat
-        function displayMessage(data) {
-            const chatBox = document.getElementById('chatBox');
-            const messageElement = document.createElement('div');
-            messageElement.textContent = JSON.stringify(data); // Customize display format as needed
-            chatBox.appendChild(messageElement);
-        }
-
-        // Function to log connection status in the log box
-        function logConnectionStatus(status) {
-            const logBox = document.getElementById('logBox');
-            const logElement = document.createElement('div');
-            logElement.textContent = status;
-            logBox.appendChild(logElement);
-            logBox.scrollTop = logBox.scrollHeight; // Auto-scroll to the bottom
-        }
-    </script>
+    <title>GuestBook Messages Statistics</title>
+    <script src="https://cdn.jsdelivr.net/gh/amark/gun/gun.js"></script> <!-- Load Gun.js -->
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
         }
-        #chatBox {
-            border: 1px solid #ccc;
-            padding: 10px;
-            height: 300px;
-            overflow-y: auto;
-            margin-bottom: 10px;
+        h1 {
+            color: #333;
         }
-        #logBox {
-            border: 1px solid #ccc;
-            padding: 10px;
-            height: 100px;
-            overflow-y: auto;
-            margin-bottom: 10px;
-            background-color: #f9f9f9;
-        }
-        #messageInput {
-            width: 70%;
-            padding: 10px;
-        }
-        #sendButton {
-            padding: 10px;
+        #stats {
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
-    <h1>Gun.js World Chat</h1>
-    <div id="logBox"></div>
-    <div id="chatBox"></div>
-    <input type="text" id="messageInput" placeholder="Type your message here..." />
-    <button id="sendButton" onclick="sendMessage()">Send</button>
+    <h1>GuestBook Messages Statistics</h1>
+    <div id="stats">
+        <p>Total Messages: <span id="totalMessages">0</span></p>
+        <p>Size of Messages: <span id="sizeMessages">0</span> bytes</p>
+    </div>
+
+    <script>
+        const gun = Gun('http://localhost:8765/gun'); // Change to your Gun.js server URL
+
+        // Function to fetch messages and calculate statistics
+        function fetchMessagesStats() {
+            const guestBookNode = gun.get('GuestBook');
+
+            guestBookNode.map().on((message, id) => {
+                if (message) {
+                    const totalMessagesElement = document.getElementById('totalMessages');
+                    const sizeMessagesElement = document.getElementById('sizeMessages');
+
+                    // Update total messages
+                    let totalMessages = parseInt(totalMessagesElement.innerText) + 1;
+                    totalMessagesElement.innerText = totalMessages;
+
+                    // Update size of messages
+                    let messageSize = JSON.stringify(message).length;
+                    let currentSize = parseInt(sizeMessagesElement.innerText) + messageSize;
+                    sizeMessagesElement.innerText = currentSize;
+                }
+            });
+        }
+
+        // Fetch messages stats on load
+        fetchMessagesStats();
+    </script>
 </body>
 </html>
