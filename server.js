@@ -7,10 +7,6 @@ const port = process.env.PORT || 8765;
 
 // Create an HTTP server
 const server = http.createServer((req, res) => {
-    res.setHeader('Access-Control-Allow-Origin', '*'); // CORS headers
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
     if (req.url === '/') {
         // Serve the HTML page
         fs.readFile(path.join(__dirname, 'server.html'), 'utf8', (err, data) => {
