@@ -67,7 +67,14 @@
         function deleteAllMessages() {
             const guestBookNode = gun.get('GuestBook');
             guestBookNode.put(null); // Deletes all messages under the 'GuestBook' node
-            alert('All messages have been deleted!');
+            localStorage.clear(); // Clear all local storage
+            alert('local storage cleared and all messages have been deleted!');
+            
+            // Clear local storage for Gun.js
+
+            // If you want to remove specific items, you can use:
+            // localStorage.removeItem('yourKey');
+
             // Reset statistics
             document.getElementById('totalMessages').innerText = '0';
             document.getElementById('sizeMessages').innerText = '0';
