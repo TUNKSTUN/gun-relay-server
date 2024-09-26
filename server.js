@@ -20,7 +20,7 @@ const server = http.createServer((req, res) => {
             res.end(data);
         });
     } else {
-        // Handle non-HTML requests (static assets, etc.) if needed
+        // Handle other requests
         res.writeHead(404);
         res.end();
     }
@@ -44,14 +44,18 @@ const wss = new WebSocket.Server({ server });
 // Handle WebSocket connections
 wss.on('connection', (ws) => {
     console.log('New WebSocket connection');
-    
+
     ws.on('message', (message) => {
         console.log(`Received: ${message}`);
-        // Handle incoming messages from clients if necessary
+        // Optionally handle incoming messages from clients
     });
 
     ws.on('close', () => {
         console.log('WebSocket connection closed');
+    });
+
+    ws.on('error', (error) => {
+        console.error('WebSocket error:', error);
     });
 });
 
@@ -61,11 +65,6 @@ const guestBook = gun.get('GuestBook');
 // Listen for new messages and broadcast them
 guestBook.map().on((message, id) => {
     console.log(`New message: ${JSON.stringify(message)}`);
-});
-
-// Optional: Add any custom event handlers or logic here
-gun.on('hi', (peer) => {
-    console.log(`New peer connection: ${peer}`);
 });
 
 // Function to delete messages after 7 days
