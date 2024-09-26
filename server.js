@@ -44,7 +44,7 @@ const guestBook = gun.get('GuestBook');
 // Listen for new messages and broadcast them
 guestBook.map().on((message, id) => {
     if (message) {
-        console.log(`New message: ${JSON.stringify(message)}`);
+        console.log(`New message: ${message}`);
     } else {
         console.warn(`Received undefined message for ID: ${id}`);
     }
