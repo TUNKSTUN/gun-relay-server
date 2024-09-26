@@ -2,8 +2,11 @@ const Gun = require('gun');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const WebSocket = require('ws');
 
 const port = process.env.PORT || 8765;
+
+// Create an HTTP server
 const server = http.createServer((req, res) => {
     if (req.url === '/') {
         // Serve the HTML page
@@ -17,30 +20,51 @@ const server = http.createServer((req, res) => {
             res.end(data);
         });
     } else {
-        // Handle other requests (e.g., Gun.js WebSocket connections)
-        gun.wsp(req, res);
+        // Handle non-HTML requests (static assets, etc.) if needed
+        res.writeHead(404);
+        res.end();
     }
-}).listen(port, '0.0.0.0', () => {
+});
+
+// Start the HTTP server
+server.listen(port, '0.0.0.0', () => {
     console.log(`GunJS relay peer started on port ${port}`);
 });
 
 // Initialize Gun with the server
 const gun = Gun({
-    web: server, // Pass the server instance to Gun
+    web: server,
     file: 'data', // Enable file storage
     radisk: true // Use radisk for in-memory storage
+});
+
+// Create a WebSocket server
+const wss = new WebSocket.Server({ server });
+
+// Handle WebSocket connections
+wss.on('connection', (ws) => {
+    console.log('New WebSocket connection');
+    
+    ws.on('message', (message) => {
+        console.log(`Received: ${message}`);
+        // Handle incoming messages from clients if necessary
+    });
+
+    ws.on('close', () => {
+        console.log('WebSocket connection closed');
+    });
 });
 
 // Create a 'GuestBook' node in the Gun graph
 const guestBook = gun.get('GuestBook');
 
 // Listen for new messages and broadcast them
-guestBook.map().on(function(message, id) {
+guestBook.map().on((message, id) => {
     console.log(`New message: ${JSON.stringify(message)}`);
 });
 
 // Optional: Add any custom event handlers or logic here
-gun.on('hi', peer => {
+gun.on('hi', (peer) => {
     console.log(`New peer connection: ${peer}`);
 });
 
