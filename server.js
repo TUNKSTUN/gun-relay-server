@@ -16,17 +16,17 @@ const corsOptions = {
 };
 app.use(cors(corsOptions)); // Use CORS middleware
 
+// Serve the server.html file
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'server.html')); // Adjust the path if needed
+});
+
 // Create an HTTP server with Express
 const httpServer = http.createServer(app);
 
 // Gun.js setup with WebSocket support
 const gun = Gun({
     web: httpServer, // Use the HTTP server instance
-});
-
-// Simple HTTP endpoint
-app.get('/', (req, res) => {
-    res.status(200).send('Gun.js World Chat Server is running\n');
 });
 
 // Start the HTTP/WebSocket server on the Render provided port or fallback to 3010
@@ -38,7 +38,6 @@ httpServer.listen(port, () => {
 // WebSocket server that uses the HTTP server for connections
 const wss = new WebSocket.Server({ server: httpServer });
 
-// Handle new WebSocket client connections
 wss.on('connection', (ws) => {
     console.log('New WebSocket client connected');
 

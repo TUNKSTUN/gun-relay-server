@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gun.js World Chat</title>
+    <script>
+        // Establish a WebSocket connection to the server
+        const ws = new WebSocket('wss://your-deployed-url.com:10000/'); // Update with your deployed URL
+
+        ws.onopen = () => {
+            console.log('WebSocket connection established');
+            logConnectionStatus('WebSocket connection established');
+        };
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            console.log('Message from server:', data);
+            // Display the received message in the chat box
+            displayMessage(data);
+        };
+
+        ws.onerror = (error) => {
+            console.error('WebSocket error:', error);
+            logConnectionStatus(`WebSocket error: ${error.message}`);
+        };
+
+        ws.onclose = () => {
+            console.log('WebSocket connection closed');
+            logConnectionStatus('WebSocket connection closed');
+        };
+
+        // Function to send messages to the server
+        function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value;
+            if (message) {
+                ws.send(message);
+                messageInput.value = ''; // Clear input after sending
+            }
+        }
+
+        // Function to display messages in the chat
+        function displayMessage(data) {
+            const chatBox = document.getElementById('chatBox');
+            const messageElement = document.createElement('div');
+            messageElement.textContent = JSON.stringify(data); // Customize display format as needed
+            chatBox.appendChild(messageElement);
+        }
+
+        // Function to log connection status in the log box
+        function logConnectionStatus(status) {
+            const logBox = document.getElementById('logBox');
+            const logElement = document.createElement('div');
+            logElement.textContent = status;
+            logBox.appendChild(logElement);
+            logBox.scrollTop = logBox.scrollHeight; // Auto-scroll to the bottom
+        }
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #chatBox {
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+        #logBox {
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 100px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+        }
+        #messageInput {
+            width: 70%;
+            padding: 10px;
+        }
+        #sendButton {
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Gun.js World Chat</h1>
+    <div id="logBox"></div>
+    <div id="chatBox"></div>
+    <input type="text" id="messageInput" placeholder="Type your message here..." />
+    <button id="sendButton" onclick="sendMessage()">Send</button>
+</body>
+</html>
