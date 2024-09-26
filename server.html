@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+{% comment %} <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -93,4 +93,26 @@
     <input type="text" id="messageInput" placeholder="Type your message here..." />
     <button id="sendButton" onclick="sendMessage()">Send</button>
 </body>
-</html>
+</html> {% endcomment %}
+
+
+
+<script>
+    var conn = new WebSocket('wss://sok.onrender.com');
+    conn.onopen = function(e) {
+        console.log("Connection established!");
+    };
+    setInterval(() => {
+      conn.send('Hello server!');
+    }, 1000);
+    conn.onmessage = function(e) {
+        console.log(e.data);
+    };
+    conn.onclose = function(e) {
+        console.log(e.code);
+        console.log(e.reason);
+    };              
+    conn.onerror = function(e) {
+        console.log(e);
+    };      
+</script>
