@@ -1,0 +1,28 @@
+{
+  "name": "gun-relay-server",
+  "version": "1.0.0",
+  "description": "A relay server using Gun.js for decentralized real-time communication",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "gun",
+    "relay",
+    "server",
+    "websocket",
+    "decentralized",
+    "real-time",
+    "chat"
+  ],
+  "author": "Your Name",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "gun": "^0.2020.1240",
+    "net": "^1.0.2",
+    "ws": "^8.18.0"
+  }
+}
