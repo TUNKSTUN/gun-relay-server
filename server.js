@@ -2,14 +2,13 @@ const Gun = require('gun');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { v4: uuidv4 } = require('uuid'); // Use UUID for generating unique message IDs
 
 const port = process.env.PORT || 8765;
 
 // Create an HTTP server
 const server = http.createServer((req, res) => {
     if (req.method === 'GET' && req.url === '/') {
-        // Serve the HTML page (if you ever need it for future use)
+        // Serve the HTML page (if needed)
         fs.readFile(path.join(__dirname, 'server.html'), 'utf8', (err, data) => {
             if (err) {
                 console.error('Error loading index.html:', err);
@@ -29,14 +28,16 @@ const server = http.createServer((req, res) => {
         
         req.on('end', () => {
             try {
-                const { userId, gitHubUsername, messageContent } = JSON.parse(body);
-                if (!userId || !gitHubUsername || !messageContent) {
+                const { userId, gitHubUsername, messageContent, messageId } = JSON.parse(body);
+                
+                // Validate fields
+                if (!userId || !gitHubUsername || !messageContent || !messageId) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
                     return res.end(JSON.stringify({ error: 'Missing required fields' }));
                 }
 
-                // Call the function to save the message
-                saveMessage(userId, gitHubUsername, messageContent);
+                // Call the function to save the message with the client-sent messageId
+                saveMessage(userId, gitHubUsername, messageContent, messageId);
 
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ status: 'Message saved successfully' }));
@@ -77,17 +78,18 @@ guestBook.map().on((message, id) => {
     }
 });
 
-// Function to save a message to the 'GuestBook' node
-function saveMessage(userId, gitHubUsername, messageContent) {
+// Function to save a message to the 'GuestBook' node with the client-provided messageId
+function saveMessage(userId, gitHubUsername, messageContent, messageId) {
     const message = {
         UserId: userId,
         GitHubUsername: gitHubUsername,
         DatePosted: new Date().toISOString(),
         Message: messageContent,
-        MessageId: uuidv4() // Generate a unique ID for the message
+        MessageId: messageId // Use the client-sent messageId
     };
 
-    guestBook.set(message, (ack) => {
+    // Save the message with the provided messageId as the key
+    guestBook.get(messageId).put(message, (ack) => {
         if (ack.err) {
             console.error('Error saving message:', ack.err);
         } else {
