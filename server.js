@@ -2,13 +2,14 @@ const Gun = require('gun');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const { v4: uuidv4 } = require('uuid'); // Use UUID for generating unique message IDs
 
 const port = process.env.PORT || 8765;
 
 // Create an HTTP server
 const server = http.createServer((req, res) => {
-    if (req.url === '/') {
-        // Serve the HTML page
+    if (req.method === 'GET' && req.url === '/') {
+        // Serve the HTML page (if you ever need it for future use)
         fs.readFile(path.join(__dirname, 'server.html'), 'utf8', (err, data) => {
             if (err) {
                 console.error('Error loading index.html:', err);
@@ -18,6 +19,32 @@ const server = http.createServer((req, res) => {
             }
             res.writeHead(200, { 'Content-Type': 'text/html' });
             res.end(data);
+        });
+    } else if (req.method === 'POST' && req.url === '/submit-message') {
+        // Handle POST requests to save messages
+        let body = '';
+        req.on('data', chunk => {
+            body += chunk.toString();
+        });
+        
+        req.on('end', () => {
+            try {
+                const { userId, gitHubUsername, messageContent } = JSON.parse(body);
+                if (!userId || !gitHubUsername || !messageContent) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    return res.end(JSON.stringify({ error: 'Missing required fields' }));
+                }
+
+                // Call the function to save the message
+                saveMessage(userId, gitHubUsername, messageContent);
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ status: 'Message saved successfully' }));
+            } catch (err) {
+                console.error('Error parsing request body:', err);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Internal server error' }));
+            }
         });
     } else {
         // Handle other requests
@@ -34,32 +61,61 @@ server.listen(port, '0.0.0.0', () => {
 // Initialize Gun with the server
 const gun = Gun({
     web: server,
-    file: 'data', // Enable file storage
-    radisk: true // Use radisk for in-memory storage
+    file: 'data', // Enable local file storage
+    radisk: true  // Use radisk for persistent storage
 });
 
 // Create a 'GuestBook' node in the Gun graph
 const guestBook = gun.get('GuestBook');
 
-// Listen for new messages and broadcast them
+// Listen for new messages and log them
 guestBook.map().on((message, id) => {
     if (message) {
-        console.log(`New message: ${message}`);
+        console.log(`New message from ${message.GitHubUsername} (${message.UserId}): ${message.Message}`);
     } else {
         console.warn(`Received undefined message for ID: ${id}`);
     }
 });
 
-// Function to delete messages after 7 days
+// Function to save a message to the 'GuestBook' node
+function saveMessage(userId, gitHubUsername, messageContent) {
+    const message = {
+        UserId: userId,
+        GitHubUsername: gitHubUsername,
+        DatePosted: new Date().toISOString(),
+        Message: messageContent,
+        MessageId: uuidv4() // Generate a unique ID for the message
+    };
+
+    guestBook.set(message, (ack) => {
+        if (ack.err) {
+            console.error('Error saving message:', ack.err);
+        } else {
+            console.log(`Message saved: ${JSON.stringify(message)}`);
+        }
+    });
+}
+
+// Function to delete messages after a set delay (e.g., 7 days)
 const deleteMessagesAfterDelay = (delay) => {
     setTimeout(() => {
-        guestBook.put(null) // Deletes all messages under the 'GuestBook' node
-            .then(() => {
-                console.log('All messages deleted after 7 days.');
-            })
-            .catch(err => {
-                console.error('Error deleting messages:', err);
-            });
+        guestBook.map().once((message, id) => {
+            if (message && message.DatePosted) {
+                const messageDate = new Date(message.DatePosted).getTime();
+                const currentDate = new Date().getTime();
+
+                // If the message is older than 7 days, delete it
+                if (currentDate - messageDate >= delay) {
+                    guestBook.get(id).put(null, (ack) => {
+                        if (ack.err) {
+                            console.error(`Error deleting message with ID ${id}:`, ack.err);
+                        } else {
+                            console.log(`Message with ID ${id} deleted after 7 days.`);
+                        }
+                    });
+                }
+            }
+        });
     }, delay);
 };
 
