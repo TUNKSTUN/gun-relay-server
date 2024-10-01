@@ -67,7 +67,7 @@ const gun = Gun({
 });
 
 // Create a 'GuestBook' node in the Gun graph
-const guestBook = gun.get('GuestBook1');
+const guestBook = gun.get('GB');
 
 // Listen for new messages and log them
 guestBook.map().on((message, id) => {
