@@ -66,8 +66,8 @@ const gun = Gun({
     radisk: true  // Use radisk for persistent storage
 });
 
-// Create a 'GuestBook' node in the Gun graph
-const guestBook = gun.get('GB');
+// Node maker for Gun Chat app
+const guestBook = gun.get('Guests');
 
 // Listen for new messages and log them
 guestBook.map().on((message, id) => {
